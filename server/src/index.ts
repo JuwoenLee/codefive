@@ -60,7 +60,7 @@ app.get('/api/me/stats', requireAuth, async (_req, res, next) => {
     const { rows } = await db.query<{ total: string; week: string; solved_dates: string[] }>(`SELECT
       COUNT(*)::text AS total,
       COUNT(*) FILTER (WHERE solved_at >= date_trunc('week', CURRENT_DATE))::text AS week,
-      COALESCE(ARRAY_AGG(DISTINCT solved_at::date::text ORDER BY solved_at::date DESC), ARRAY[]::text[]) AS solved_dates
+      COALESCE(ARRAY_AGG(DISTINCT solved_at::date::text ORDER BY solved_at::date::text DESC), ARRAY[]::text[]) AS solved_dates
       FROM user_solutions WHERE user_id = $1`, [userId]);
     const record = rows[0];
     const dates = new Set(record.solved_dates);
