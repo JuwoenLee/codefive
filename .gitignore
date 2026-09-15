@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.sites-runtime
+*.log
+*.tsbuildinfo
+.DS_Store
