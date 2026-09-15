@@ -48,6 +48,7 @@ app.patch('/api/me/coding-level', requireAuth, async (req, res, next) => {
     const codingLevel = req.body?.codingLevel as string | undefined;
     if (!['beginner', 'intermediate', 'advanced'].includes(codingLevel ?? '')) return res.status(400).json({ message: '유효한 코딩 수준을 선택해 주세요.' });
     const userId = (res.locals.user as AuthUser).id;
+    await db.query(`DELETE FROM daily_recommendations WHERE user_id = $1 AND recommended_date = CURRENT_DATE`, [userId]);
     const { rows } = await db.query<AuthUser>(`UPDATE users SET coding_level = $1 WHERE id = $2 RETURNING id, email, username, coding_level`, [codingLevel, userId]);
     res.json({ user: rows[0] });
   } catch (error) { next(error); }

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check, ChevronRight, Code2, Edit3, Eye, Flame, LockKeyhole, LogOut, MessageCircle, Search, Settings, Target, Trophy, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check, ChevronRight, Code2, Edit3, Eye, Flame, LockKeyhole, LogOut, MessageCircle, Moon, Search, Settings, Sun, Target, Trophy, X } from 'lucide-react';
 import { problems as initialProblems } from './data';
 import type { ApiDiscussion, Problem } from './types';
 
@@ -8,6 +8,7 @@ type CodingLevel = 'beginner' | 'intermediate' | 'advanced';
 type Session = { token: string; user: { id: string; email: string; username: string; coding_level?: CodingLevel } };
 type LearningStats = { total: number; week: number; streak: number };
 const sessionKey = 'codefive-session';
+const themeKey = 'codefive-theme';
 const apiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 
 function ConfettiBurst() {
@@ -32,6 +33,8 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [celebrating, setCelebrating] = useState(false);
   const [stats, setStats] = useState<LearningStats>({ total: 0, week: 0, streak: 0 });
+  const [theme, setTheme] = useState<'night' | 'day'>(() => localStorage.getItem(themeKey) === 'day' ? 'day' : 'night');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const todayLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'long', day: 'numeric' }).format(new Date()).toUpperCase();
   const completed = problems.filter((p) => p.solved).length;
   const totalMinutes = problems.reduce((total, problem) => total + problem.expectedMinutes, 0);
@@ -69,7 +72,9 @@ export default function App() {
     window.setTimeout(() => setToast(''), 2200);
   }
 
-  return <div className="app-shell">
+  function changeTheme(nextTheme: 'night' | 'day') { localStorage.setItem(themeKey, nextTheme); setTheme(nextTheme); }
+
+  return <div className={`app-shell ${theme === 'day' ? 'theme-light' : ''}`}>
     <header className="topbar">
       <button className="brand" onClick={() => setView('today')} aria-label="오늘의 문제로 이동"><span className="brand-mark">C5</span><span>CODE<span>5</span></span></button>
       <nav aria-label="주요 메뉴">
@@ -77,7 +82,7 @@ export default function App() {
         <button className={view === 'record' ? 'active' : ''} onClick={() => setView('record')}>풀이 기록</button>
         <button className={view === 'board' ? 'active' : ''} onClick={() => setView('board')}>토론 광장</button>
       </nav>
-      <div className="header-actions"><button className="icon-btn" aria-label="설정"><Settings size={19}/></button><button className="profile" title={session.user.email} onClick={() => setView('profile')}><span>{session.user.username.slice(0, 2).toUpperCase()}</span><b>{session.user.username}</b><ChevronRight size={16}/></button><button className="icon-btn" aria-label="로그아웃" onClick={() => { localStorage.removeItem(sessionKey); setSession(null); }}><LogOut size={18}/></button></div>
+      <div className="header-actions"><button className="icon-btn" aria-label="환경설정" onClick={() => setSettingsOpen(true)}><Settings size={19}/></button><button className="profile" title={session.user.email} onClick={() => setView('profile')}><span>{session.user.username.slice(0, 2).toUpperCase()}</span><b>{session.user.username}</b><ChevronRight size={16}/></button><button className="icon-btn" aria-label="로그아웃" onClick={() => { localStorage.removeItem(sessionKey); setSession(null); }}><LogOut size={18}/></button></div>
     </header>
 
     <main>
@@ -111,6 +116,7 @@ export default function App() {
     </main>
     {celebrating && <ConfettiBurst/>}
     {toast && <div className="toast"><Check size={17}/>{toast}</div>}
+    {settingsOpen && <div className="modal-backdrop" onClick={() => setSettingsOpen(false)}><section className="modal settings-modal" onClick={event => event.stopPropagation()}><button className="close-btn" onClick={() => setSettingsOpen(false)} aria-label="환경설정 닫기"><X size={18}/></button><p className="eyebrow">PREFERENCES</p><h2>환경설정</h2><p>화면 테마를 선택하세요. 선택한 설정은 이 기기에 저장됩니다.</p><div className="theme-options"><button className={theme === 'night' ? 'selected' : ''} onClick={() => changeTheme('night')}><Moon size={19}/><span><b>Night mode</b><small>차콜 기반의 어두운 화면</small></span></button><button className={theme === 'day' ? 'selected' : ''} onClick={() => changeTheme('day')}><Sun size={19}/><span><b>Day mode</b><small>밝고 선명한 라이트 화면</small></span></button></div></section></div>}
   </div>;
 }
 
@@ -132,7 +138,7 @@ function ProfileView({ user, token, problems, stats, goToToday, onUserUpdated }:
     <div className="profile-overview"><article><span className="metric-icon"><Flame size={20}/></span><div><p>연속 학습</p><strong>{stats.streak}<small>일</small></strong></div><span className="metric-trend">현재</span></article><article><span className="metric-icon"><Code2 size={20}/></span><div><p>이번 주 풀이</p><strong>{stats.week}<small>문제</small></strong></div><span className="metric-trend">누적 {stats.total}</span></article><article><span className="metric-icon"><Target size={20}/></span><div><p>이번 달 목표</p><strong>{stats.total}<small> / 50</small></strong></div><span className="metric-trend">{Math.round(stats.total / 50 * 100)}%</span></article></div>
     <div className="profile-grid"><div className="profile-card activity-card"><div className="card-heading"><div><span className="eyebrow">LAST 7 DAYS</span><h2>이번 주 학습 활동</h2></div><CalendarDays size={19}/></div><div className="activity-bars">{activity.map((count, index) => <div key={days[index]}><i style={{ height: `${Math.max(count, 1) * 17}px` }} className={index === 6 ? 'today-bar' : ''}/><b>{count}</b><span>{days[index]}</span></div>)}</div><p className="activity-note"><Flame size={15}/> 이번 주 <strong>{stats.week}문제</strong>를 풀었어요.</p></div><div className="profile-card goal-card"><span className="eyebrow">{currentMonth} GOAL</span><h2>월간 목표</h2><div className="goal-ring" style={{ background: `radial-gradient(closest-side,#1a1c19 80%,transparent 81% 100%),conic-gradient(var(--lime) ${Math.min(stats.total * 2, 100)}%,#343931 0)` }}><strong>{Math.min(stats.total * 2, 100)}<small>%</small></strong></div><p>{Math.max(50 - stats.total, 0)}문제만 더 풀면 이번 달 목표를 달성해요.</p><button className="primary" onClick={goToToday}>오늘의 문제 풀기 <ArrowRight size={16}/></button></div></div>
     <div className="profile-card recent-card"><div className="card-heading"><div><span className="eyebrow">RECENTLY SOLVED</span><h2>최근 풀이</h2></div><button className="ghost" onClick={goToToday}>전체 보기 <ChevronRight size={16}/></button></div>{completed.length ? completed.map((problem) => <div className="profile-solve" key={problem.id}><span><Check size={16}/></span><div><b>{problem.title}</b><small>{problem.difficulty} · {problem.category}</small></div><time>오늘</time></div>) : <div className="empty">완료한 문제를 기록하면 여기에 표시됩니다.</div>}</div>
-    {editing && <div className="modal-backdrop" onClick={() => !saving && setEditing(false)}><form className="modal level-modal" onSubmit={saveCodingLevel} onClick={event => event.stopPropagation()}><span className="eyebrow">CODING LEVEL</span><h2>현재 코딩 수준</h2><p>선택한 수준은 다음 날부터 추천 문제 난이도 구성에 반영됩니다.</p><label><input type="radio" name="coding-level" checked={codingLevel === 'beginner'} onChange={() => setCodingLevel('beginner')}/><span><b>초급</b><small>Lv. 1 3개 · Lv. 2 2개</small></span></label><label><input type="radio" name="coding-level" checked={codingLevel === 'intermediate'} onChange={() => setCodingLevel('intermediate')}/><span><b>중급</b><small>Lv. 1 2개 · Lv. 2 중심 · 3일마다 Lv. 3</small></span></label><label><input type="radio" name="coding-level" checked={codingLevel === 'advanced'} onChange={() => setCodingLevel('advanced')}/><span><b>고급</b><small>Lv. 2 3개 · Lv. 3 2개</small></span></label>{error && <p className="auth-error">{error}</p>}<div><button type="button" className="ghost" onClick={() => setEditing(false)} disabled={saving}>취소</button><button className="primary" disabled={saving}>{saving ? '저장 중…' : '수준 저장'}</button></div></form></div>}
+    {editing && <div className="modal-backdrop" onClick={() => !saving && setEditing(false)}><form className="modal level-modal" onSubmit={saveCodingLevel} onClick={event => event.stopPropagation()}><span className="eyebrow">CODING LEVEL</span><h2>현재 코딩 수준</h2><p>저장하면 오늘의 추천 문제도 선택한 수준에 맞게 즉시 새로 구성됩니다.</p><label><input type="radio" name="coding-level" checked={codingLevel === 'beginner'} onChange={() => setCodingLevel('beginner')}/><span><b>초급</b><small>Lv. 1 3개 · Lv. 2 2개</small></span></label><label><input type="radio" name="coding-level" checked={codingLevel === 'intermediate'} onChange={() => setCodingLevel('intermediate')}/><span><b>중급</b><small>Lv. 1 2개 · Lv. 2 중심 · 3일마다 Lv. 3</small></span></label><label><input type="radio" name="coding-level" checked={codingLevel === 'advanced'} onChange={() => setCodingLevel('advanced')}/><span><b>고급</b><small>Lv. 2 3개 · Lv. 3 2개</small></span></label>{error && <p className="auth-error">{error}</p>}<div><button type="button" className="ghost" onClick={() => setEditing(false)} disabled={saving}>취소</button><button className="primary" disabled={saving}>{saving ? '저장 중…' : '수준 저장'}</button></div></form></div>}
   </section>;
 }
 
